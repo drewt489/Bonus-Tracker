@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quarterly Turns</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f1117; --surf:#181c27; --surf2:#1f2434;
+    --b1:rgba(255,255,255,0.07); --b2:rgba(255,255,255,0.12);
+    --txt:#e8eaf0; --mut:#6b7280;
+    --acc:#4f8ef7; --grn:#34d399; --amb:#fbbf24; --red:#f87171; --pur:#a78bfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-height:100vh}
+
+  /* ── header ── */
+  header{padding:22px 28px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-mark{width:34px;height:34px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:#fff;flex-shrink:0}
+  h1{font-size:20px;font-weight:600;letter-spacing:-.3px}
+  .sub-hd{font-size:12px;color:var(--mut);margin-top:2px}
+  .hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tok-wrap{display:flex;align-items:center;gap:6px}
+  .tok-wrap label{font-size:12px;color:var(--mut);white-space:nowrap}
+  .tok-in{font-family:'DM Mono',monospace;font-size:11px;background:var(--surf);border:1px solid var(--b2);border-radius:6px;color:var(--txt);padding:6px 10px;width:210px;outline:none}
+  .tok-in:focus{border-color:var(--acc)}
+  .ibtn{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);background:var(--surf);border:1px solid var(--b1);border-radius:6px;padding:6px 10px;cursor:pointer;font-family:inherit;transition:all .15s}
+  .ibtn:hover{color:var(--txt);border-color:var(--b2)}
+  .ibtn svg{width:13px;height:13px;flex-shrink:0}
+  .ibtn.primary{background:var(--acc);color:#fff;border-color:transparent}
+  .ibtn.primary:hover{opacity:.88;color:#fff}
+
+  /* ── notice ── */
+  .notice{background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:8px;padding:10px 14px;margin:12px 28px 0;font-size:12px;color:#93b8fa;line-height:1.6}
+
+  /* ── tabs ── */
+  .tabs-wrap{padding:16px 28px 0;overflow-x:auto}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--b1);min-width:max-content}
+  .tab{padding:7px 14px;font-size:12px;color:var(--mut);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap;font-family:inherit}
+  .tab:hover{color:var(--txt)}
+  .tab.active{color:var(--acc);border-bottom-color:var(--acc);font-weight:500}
+  .tab.rollup{color:var(--pur)}
+  .tab.rollup.active{color:var(--pur);border-bottom-color:var(--pur)}
+  .tab-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--b2);margin-left:5px;margin-bottom:1px;vertical-align:middle;transition:background .2s}
+  .tab.loaded .tab-dot{background:var(--grn)}
+
+  /* ── stats row ── */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;padding:14px 28px 0}
+  .stat{background:var(--surf);border:1px solid var(--b1);border-radius:9px;padding:11px 13px}
+  .stat-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:5px}
+  .stat-value{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--txt)}
+  .c-a{color:var(--acc)} .c-g{color:var(--grn)} .c-y{color:var(--amb)} .c-p{color:var(--pur)}
+
+  /* ── controls ── */
+  .controls{display:flex;gap:8px;padding:12px 28px 0;flex-wrap:wrap;align-items:center}
+  .ctrl{background:var(--surf);border:1px solid var(--b1);border-radius:7px;color:var(--txt);font-family:inherit;font-size:12px;padding:6px 10px;outline:none;transition:border .15s}
+  .ctrl:focus{border-color:var(--acc)}
+  input.ctrl{flex:1;min-width:140px}
+
+  /* ── table ── */
+  .tbl-wrap{padding:14px 28px 48px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:620px}
+  thead tr{border-bottom:1px solid var(--b2)}
+  th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:9px 12px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+  th:hover{color:var(--txt)}
+  th.sorted{color:var(--acc)}
+  td{padding:10px 12px;font-size:12px;border-bottom:1px solid var(--b1);white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--surf)}
+  .unit{font-family:'DM Mono',monospace;font-size:13px;font-weight:500}
+  .q{font-family:'DM Mono',monospace;font-size:12px}
+  .q.on{color:var(--grn);font-weight:500}
+  .q.off{color:#252b40}
+  .badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px}
+  .bv{background:rgba(251,191,36,.12);color:var(--amb)}
+  .bo{background:rgba(52,211,153,.1);color:var(--grn)}
+  .bd{background:rgba(107,114,128,.12);color:var(--mut)}
+  .ord{font-size:11px;color:var(--mut)}
+  .ord-f{color:var(--grn)} .ord-s{color:var(--red)} .ord-p{color:var(--acc)}
+
+  /* ── rollup table ── */
+  .rollup-wrap{padding:14px 28px 48px;overflow-x:auto}
+  .rollup-wrap h2{font-size:14px;font-weight:500;color:var(--pur);margin-bottom:14px;letter-spacing:-.2px}
+  .rtbl{width:100%;border-collapse:collapse;min-width:700px}
+  .rtbl thead tr{border-bottom:1px solid var(--b2)}
+  .rtbl th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:9px 14px;text-align:left;white-space:nowrap}
+  .rtbl th.r{text-align:right}
+  .rtbl td{padding:11px 14px;font-size:13px;border-bottom:1px solid var(--b1)}
+  .rtbl tr:last-child td{border-bottom:none}
+  .rtbl tr:hover td{background:var(--surf)}
+  .rtbl td.r{text-align:right;font-family:'DM Mono',monospace;font-size:12px}
+  .rtbl td.board-name{font-weight:500}
+  .rtbl tr.total-row td{border-top:1px solid var(--b2);font-weight:600;color:var(--pur);background:var(--surf)}
+  .rtbl tr.total-row td.r{color:var(--grn)}
+  .rtbl .qn{color:var(--grn);font-weight:500}
+  .rtbl .qz{color:#252b40}
+  .loading-row td{text-align:center;color:var(--mut);padding:20px}
+  .dot-loading{display:inline-flex;gap:4px}
+  .dot-loading span{width:5px;height:5px;border-radius:50%;background:var(--acc);animation:blink 1.2s infinite}
+  .dot-loading span:nth-child(2){animation-delay:.2s}
+  .dot-loading span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+  /* ── rollup summary cards ── */
+  .rollup-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;padding:14px 28px 0}
+  .rcard{background:var(--surf);border:1px solid var(--b1);border-radius:9px;padding:11px 13px;position:relative}
+  .rcard-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:5px}
+  .rcard-val{font-family:'DM Mono',monospace;font-size:24px;font-weight:500}
+  .rcard-sub{font-size:10px;color:var(--mut);margin-top:3px}
+  .progress-wrap{margin-top:8px;height:3px;background:var(--b2);border-radius:2px;overflow:hidden}
+  .progress-bar{height:100%;border-radius:2px;transition:width .4s ease}
+
+  /* ── state ── */
+  .state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--mut);gap:12px;text-align:center}
+  .state-box p{font-size:14px}
+  .spinner{width:28px;height:28px;border:2px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+
+  /* ── easy button ── */
+  .easy-btn { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
+    background: linear-gradient(135deg,#1d7a3a,#22a84e); color: #fff; border: none;
+    border-radius: 10px; padding: 10px 20px; cursor: pointer; font-family: inherit;
+    letter-spacing: .01em; transition: opacity .15s, transform .1s; box-shadow: 0 2px 12px rgba(34,168,78,.35); }
+  .easy-btn:hover { opacity: .9; }
+  .easy-btn:active { transform: scale(.97); }
+  .easy-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .easy-btn-wrap { padding: 14px 28px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">QT</div>
+    <div>
+      <h1>Quarterly Turns</h1>
+      <div class="sub-hd">Monday.com API · Finished units by quarter · Roll-up</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="tok-wrap">
+      <label>API Token</label>
+      <input class="tok-in" id="api-token" type="password" placeholder="Paste Monday API token…">
+    </div>
+    <button class="ibtn primary" onclick="saveToken()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 5L6.5 11.5 3 8"/></svg>Save
+    </button>
+    <button class="ibtn" onclick="loadRollup(true)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>Refresh all
+    </button>
+  </div>
+</header>
+
+<div id="notice" class="notice" style="display:none">
+  ⚠ Paste your Monday.com Personal API Token above and click <strong>Save</strong>.
+  Find it at: <strong>monday.com → (avatar) → Administration → API → Personal API Tokens</strong>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs">
+    <button class="tab rollup active" onclick="showRollup()">
+      ⬡ Roll-up summary
+    </button>
+  </div>
+</div>
+
+<!-- Roll-up view -->
+<div id="rollup-view">
+  <div class="rollup-cards" id="rollup-cards" style="display:none"></div>
+  <div class="easy-btn-wrap" id="rollup-easy-wrap" style="display:none">
+    <button class="easy-btn" onclick="exportFullReport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+      </svg>
+      Easy Button — Full Report Excel
+    </button>
+  </div>
+  <div class="rollup-wrap">
+    <h2>All boards — Q column unit counts</h2>
+    <table class="rtbl">
+      <thead>
+        <tr>
+          <th>Board</th>
+          <th class="r">Q4/25 fin.</th>
+          <th class="r">Q1</th>
+          <th class="r">Q2</th>
+          <th class="r">Q3</th>
+          <th class="r">Q4</th>
+          <th class="r">Vacant</th>
+          <th class="r">Finished</th>
+        </tr>
+      </thead>
+      <tbody id="rollup-tbody">
+        <tr class="loading-row"><td colspan="9"><div class="dot-loading"><span></span><span></span><span></span></div> Loading boards…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Board detail view -->
+<div id="board-view" style="display:none">
+  <div class="stats-row" id="stats-row"></div>
+  <div class="controls" id="controls">
+    <select class="ctrl" id="f-occ"><option value="">All occupancy</option><option>Vacant</option><option>Occupied</option><option>Demo</option></select>
+    <select class="ctrl" id="f-q">
+      <option value="">Any Q</option>
+      <option value="q0">Has Q4/25</option><option value="q1">Has Q1</option>
+      <option value="q2">Has Q2</option><option value="q3">Has Q3</option>
+      <option value="q4">Has Q4</option>
+    </select>
+    <input class="ctrl" id="f-s" type="text" placeholder="Search unit…">
+    <button class="ibtn" style="margin-left:auto" onclick="exportCSV()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 12h10"/></svg>Export CSV
+    </button>
+  </div>
+  
+<div class="easy-btn-wrap" id="easy-btn-wrap" style="display:none">
+  <button class="easy-btn" onclick="exportExcel()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+    </svg>
+    Easy Button — Export Excel
+  </button>
+</div>
+<div id="main"></div>
+</div>
+
+<script>
+const BOARDS = [
+  { id:"18138614518", name:"Country Side Estates", short:"CSE",
+    occ:"color_mkwqqdkd", order:"color_mkzt5dc",
+    q0:"numeric_mm0h4wfe", q1:"numeric_mm0jhj6h", q2:"numeric_mm23mk8w", q3:"numeric_mm23yg3x", q4:"numeric_mm23xea4" },
+  { id:"18150267423", name:"Coachlight East", short:"CL-E",
+    occ:"color_mkwsrcep", order:"color_mkzwaam0",
+    q0:"numeric_mm0h3jgm", q1:"numeric_mm0jjg62", q2:"numeric_mm225pzd", q3:"numeric_mm23mw66", q4:"numeric_mm2330mv" },
+  { id:"18150286434", name:"Coachlight North", short:"CL-N",
+    occ:"color_mkwsjh04", order:"color_mm07rg9t",
+    q0:"numeric_mm0hvfpf", q1:"numeric_mm0jafzx", q2:"numeric_mm2397mq", q3:"numeric_mm23k8rd", q4:"numeric_mm23m1rv" },
+  { id:"18396987740", name:"Lakeside Landing", short:"LL",
+    occ:"color_mkzwqy9t", order:"color_mkzzt65y",
+    q0:"numeric_mm0hkcz", q1:"numeric_mm0jsv5b", q2:"numeric_mm23vpqw", q3:"numeric_mm2316jn", q4:"numeric_mm23hra8" },
+  { id:"18396998043", name:"Coachlight West", short:"CL-W",
+    occ:"color_mkzwcmhr", order:"color_mkzzh769",
+    q0:"numeric_mm0j5wxj", q1:"numeric_mm0hsdcr", q2:"numeric_mm23zh7n", q3:"numeric_mm23qh43", q4:"numeric_mm23cxm0" },
+  { id:"18397281183", name:"Coachlight South", short:"CL-S",
+    occ:"color_mkzzcaz7", order:"color_mkzz6w4q",
+    q0:"numeric_mm0hsf7g", q1:"numeric_mm0jg1gh", q2:"numeric_mm23217x", q3:"numeric_mm2353t7", q4:"numeric_mm239mvs" },
+  { id:"18398061860", name:"Pine Ridge", short:"PR",
+    occ:"color_mm03khvc", order:"color_mm032w4r",
+    q0:"numeric_mm0hhjvs", q1:"numeric_mm0jrccm", q2:"numeric_mm2359j8", q3:"numeric_mm231h6w", q4:"numeric_mm23v6e8" },
+  { id:"9973387475", name:"Forest Hollow", short:"FH",
+    occ:"color_mkvmqmtp", order:"color_mm02kkkb",
+    q0:"numeric_mkxeng55", q1:"numeric_mm0jnbgz", q2:"numeric_mm23hz80", q3:"numeric_mm234ber", q4:"numeric_mm23pbw6" },
+];
+
+const API = "https://api.monday.com/v2";
+const cache = {};
+let curIdx = null, allItems = [], sortCol = null, sortDir = 1;
+let rollupData = {}; // boardId -> stats object
+
+function getToken(){ return localStorage.getItem('mday_tok') || ''; }
+function saveToken(){
+  const t = document.getElementById('api-token').value.trim();
+  if(!t){ alert('Please paste a token first.'); return; }
+  localStorage.setItem('mday_tok', t);
+  document.getElementById('notice').style.display = 'none';
+  // kick off rollup
+  loadRollup(false);
+}
+
+window.onload = () => {
+  const t = getToken();
+  if(t){ document.getElementById('api-token').value = t; loadRollup(false); }
+  else { document.getElementById('notice').style.display = 'block'; }
+  buildBoardTabs();
+};
+
+// ── Build tabs ────────────────────────────────────────────────────────────
+function buildBoardTabs(){
+  const tabsEl = document.getElementById('tabs');
+  BOARDS.forEach((b,i) => {
+    const t = document.createElement('button');
+    t.className = 'tab'; t.dataset.idx = i;
+    t.innerHTML = b.short + '<span class="tab-dot"></span>';
+    t.onclick = () => loadBoard(i);
+    tabsEl.appendChild(t);
+  });
+}
+
+// ── GQL helper ───────────────────────────────────────────────────────────
+async function gql(query, token){
+  const r = await fetch(API, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':token},
+    body:JSON.stringify({query})
+  });
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const d = await r.json();
+  if(d.errors) throw new Error(d.errors[0]?.message||'API error');
+  return d.data;
+}
+
+// ── Fetch all items for a board (with pagination) ────────────────────────
+async function fetchBoard(board, token){
+  if(cache[board.id]) return cache[board.id];
+  const cols = [board.occ, board.order, board.q0, board.q1, board.q2, board.q3, board.q4];
+  const cStr = cols.map(c=>`"${c}"`).join(',');
+  let items = [], cursor = null;
+  do {
+    const ca = cursor ? `, cursor:"${cursor}"` : '';
+    const q = `{boards(ids:[${board.id}]){items_page(limit:200${ca}){cursor items{id name column_values(ids:[${cStr}]){id text}}}}}`;
+    const d = await gql(q, token);
+    const pg = d.boards[0].items_page;
+    cursor = pg.cursor || null;
+    pg.items.forEach(item => {
+      const cv = {};
+      item.column_values.forEach(c => { cv[c.id] = c.text || null; });
+      items.push({
+        id:item.id, name:item.name,
+        occ:cv[board.occ]||null, order:cv[board.order]||null,
+        q0:n(cv[board.q0]), q1:n(cv[board.q1]), q2:n(cv[board.q2]),
+        q3:n(cv[board.q3]), q4:n(cv[board.q4]),
+      });
+    });
+  } while(cursor);
+  cache[board.id] = items;
+  return items;
+}
+
+function n(v){ if(v==null||v==='') return null; const x=parseFloat(v); return isNaN(x)?null:x; }
+
+// ── Compute stats for a list of items ───────────────────────────────────
+function computeStats(items){
+  const fin = r => (r.order||'').toLowerCase().includes('finish');
+  return {
+    total: items.length,
+    q0: items.filter(r=>r.q0!=null&&r.q0!==0).length,
+    q1: items.filter(r=>r.q1!=null&&r.q1!==0).length,
+    q2: items.filter(r=>r.q2!=null&&r.q2!==0).length,
+    q3: items.filter(r=>r.q3!=null&&r.q3!==0).length,
+    q4: items.filter(r=>r.q4!=null&&r.q4!==0).length,
+    vacant: items.filter(r=>(r.occ||'').toLowerCase().includes('vacant')&&!(r.occ||'').toLowerCase().includes('lot')).length,
+    finished: items.filter(r=>fin(r)).length,
+  };
+}
+
+// ── Roll-up view ─────────────────────────────────────────────────────────
+function showRollup(){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.tab.rollup').classList.add('active');
+  document.getElementById('rollup-view').style.display = 'block';
+  document.getElementById('board-view').style.display = 'none';
+  curIdx = null;
+}
+
+async function loadRollup(force){
+  const token = getToken();
+  if(!token){ document.getElementById('notice').style.display='block'; return; }
+  showRollup();
+  if(force) BOARDS.forEach(b => delete cache[b.id]);
+  renderRollupTable();
+
+  // Fetch all boards in parallel — each updates the table as it resolves
+  await Promise.all(BOARDS.map(async (board, i) => {
+    try {
+      const items = await fetchBoard(board, token);
+      rollupData[board.id] = computeStats(items);
+      const tabEl = document.querySelector(`.tab[data-idx="${i}"]`);
+      if(tabEl) tabEl.classList.add('loaded');
+    } catch(e) {
+      rollupData[board.id] = {error: e.message};
+    }
+    renderRollupTable();
+  }));
+}
+
+function renderRollupTable(){
+  const tbody = document.getElementById('rollup-tbody');
+  const totals = {total:0,q0:0,q1:0,q2:0,q3:0,q4:0,vacant:0,finished:0};
+  let allLoaded = true;
+  let rows = '';
+
+  for(const board of BOARDS){
+    const s = rollupData[board.id];
+    if(!s){
+      allLoaded = false;
+      rows += `<tr>
+        <td class="board-name">${board.name}</td>
+        <td class="r" colspan="8" style="color:var(--mut)">
+          <div class="dot-loading"><span></span><span></span><span></span></div>
+        </td>
+      </tr>`;
+      continue;
+    }
+    if(s.error){
+      rows += `<tr><td class="board-name">${board.name}</td><td class="r" colspan="8" style="color:var(--red)">Error: ${s.error}</td></tr>`;
+      continue;
+    }
+    totals.total   += s.total;
+    totals.q0      += s.q0;
+    totals.q1      += s.q1;
+    totals.q2      += s.q2;
+    totals.q3      += s.q3;
+    totals.q4      += s.q4;
+    totals.vacant  += s.vacant;
+    totals.finished+= s.finished;
+    const pct = s.total>0 ? Math.round((s.finished/s.total)*100) : 0;
+    rows += `<tr onclick="loadBoard(${BOARDS.indexOf(board)})" style="cursor:pointer">
+      <td class="board-name">${board.name}
+        <div class="progress-wrap" style="width:120px"><div class="progress-bar" style="width:${pct}%;background:var(--grn)"></div></div>
+        <span style="font-size:10px;color:var(--mut)">${pct}% done</span>
+      </td>
+      <td class="r ${s.q0?'qn':'qz'}">${s.q0||'–'}</td>
+      <td class="r ${s.q1?'qn':'qz'}">${s.q1||'–'}</td>
+      <td class="r ${s.q2?'qn':'qz'}">${s.q2||'–'}</td>
+      <td class="r ${s.q3?'qn':'qz'}">${s.q3||'–'}</td>
+      <td class="r ${s.q4?'qn':'qz'}">${s.q4||'–'}</td>
+      <td class="r" style="color:var(--amb)">${s.vacant||'–'}</td>
+      <td class="r" style="color:var(--grn)">${s.finished||'–'}</td>
+    </tr>`;
+  }
+
+  // totals row
+  if(Object.keys(rollupData).length > 0){
+    rows += `<tr class="total-row">
+      <td>ALL BOARDS</td>
+      <td class="r">${totals.q0||'–'}</td>
+      <td class="r">${totals.q1||'–'}</td>
+      <td class="r">${totals.q2||'–'}</td>
+      <td class="r">${totals.q3||'–'}</td>
+      <td class="r">${totals.q4||'–'}</td>
+      <td class="r">${totals.vacant||'–'}</td>
+      <td class="r">${totals.finished||'–'}</td>
+    </tr>`;
+  }
+
+  tbody.innerHTML = rows;
+
+  // summary cards
+  if(Object.keys(rollupData).filter(k=>!rollupData[k].error).length > 0){
+    renderRollupCards(totals);
+  }
+}
+
+function renderRollupCards(t){
+  document.getElementById('rollup-easy-wrap').style.display = 'block';
+  const cards = document.getElementById('rollup-cards');
+  cards.style.display = 'grid';
+  const overallPct = t.total > 0 ? Math.round((t.finished/t.total)*100) : 0;
+  const totalQ = t.q0+t.q1+t.q2+t.q3+t.q4;
+  cards.innerHTML = `
+    <div class="rcard">
+      <div class="rcard-label">Q4/25</div>
+      <div class="rcard-val c-p">${t.q0||'–'}</div>
+      <div class="rcard-sub">units assigned</div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-label">Q1</div>
+      <div class="rcard-val c-g">${t.q1||'–'}</div>
+      <div class="rcard-sub">units assigned</div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-label">Q2</div>
+      <div class="rcard-val c-g">${t.q2||'–'}</div>
+      <div class="rcard-sub">units assigned</div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-label">Q3</div>
+      <div class="rcard-val c-g">${t.q3||'–'}</div>
+      <div class="rcard-sub">units assigned</div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-label">Q4</div>
+      <div class="rcard-val c-g">${t.q4||'–'}</div>
+      <div class="rcard-sub">units assigned</div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-label">Total vacant</div>
+      <div class="rcard-val c-y">${t.vacant||'–'}</div>
+      <div class="rcard-sub">across all boards</div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-label">%</div>
+      <div class="rcard-val c-g">${overallPct}%</div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${overallPct}%;background:var(--grn)"></div></div>
+    </div>`;
+}
+
+// ── Board detail view ─────────────────────────────────────────────────────
+async function loadBoard(idx){
+  const token = getToken();
+  if(!token){ document.getElementById('notice').style.display='block'; alert('No API token — paste it above and click Save.'); return; }
+  curIdx = idx;
+  const board = BOARDS[idx];
+
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===(idx+1)));
+  document.querySelector('.tab.rollup').classList.remove('active');
+  document.getElementById('rollup-view').style.display = 'none';
+  document.getElementById('board-view').style.display = 'block';
+  document.getElementById('main').innerHTML = `<div class="state-box"><div class="spinner"></div><p>Loading ${board.name}…</p></div>`;
+
+  try {
+    allItems = await fetchBoard(board, token);
+    rollupData[board.id] = computeStats(allItems);
+    document.querySelector(`.tab[data-idx="${idx}"]`).classList.add('loaded');
+    document.getElementById('easy-btn-wrap').style.display = 'block';
+    renderBoard();
+  } catch(e) {
+    document.getElementById('main').innerHTML = `<div class="state-box"><p style="color:var(--red)">Error: ${e.message}</p><p style="font-size:12px;margin-top:4px">Check your API token and try again.</p></div>`;
+  }
+}
+
+function hasQ(r){ return (r.q0!=null&&r.q0!==0)||(r.q1!=null&&r.q1!==0)||(r.q2!=null&&r.q2!==0)||(r.q3!=null&&r.q3!==0)||(r.q4!=null&&r.q4!==0); }
+function isFinished(r){ return (r.order||'').toLowerCase().includes('finish'); }
+
+function getFiltered(){
+  const oc = document.getElementById('f-occ').value.toLowerCase();
+  const qf = document.getElementById('f-q').value;
+  const sr = document.getElementById('f-s').value.toLowerCase();
+  return allItems.filter(r => {
+    if(!hasQ(r)) return false;
+    if(oc && !(r.occ||'').toLowerCase().includes(oc)) return false;
+    if(sr && !(r.name||'').toLowerCase().includes(sr)) return false;
+    if(qf==='q0'&&!r.q0) return false; if(qf==='q1'&&!r.q1) return false;
+    if(qf==='q2'&&!r.q2) return false; if(qf==='q3'&&!r.q3) return false;
+    if(qf==='q4'&&!r.q4) return false;
+    if(qf==='any'&&!r.q0&&!r.q1&&!r.q2&&!r.q3&&!r.q4) return false;
+    return true;
+  });
+}
+
+function renderBoard(){
+  const items = getFiltered();
+  const s = computeStats(items);
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat"><div class="stat-label">Q4/25</div><div class="stat-value c-p">${s.q0||'–'}</div></div>
+    <div class="stat"><div class="stat-label">Q1</div><div class="stat-value c-g">${s.q1||'–'}</div></div>
+    <div class="stat"><div class="stat-label">Q2</div><div class="stat-value c-g">${s.q2||'–'}</div></div>
+    <div class="stat"><div class="stat-label">Q3</div><div class="stat-value c-g">${s.q3||'–'}</div></div>
+    <div class="stat"><div class="stat-label">Q4</div><div class="stat-value c-g">${s.q4||'–'}</div></div>`;
+
+  if(!items.length){ document.getElementById('main').innerHTML='<div class="state-box"><p>No units match.</p></div>'; return; }
+
+  let sorted = [...items];
+  if(sortCol){
+    sorted.sort((a,b)=>{
+      const av=a[sortCol]??'', bv=b[sortCol]??'';
+      if(av===bv) return 0;
+      if(typeof av==='number'||typeof bv==='number') return (Number(av)||0)-(Number(bv)||0);
+      return String(av).localeCompare(String(bv));
+    });
+    if(sortDir<0) sorted.reverse();
+  }
+
+  const cols=['name','occ','order','q0','q1','q2','q3','q4'];
+  const lbls={name:'Unit',occ:'OCC',order:'Order',q0:'Q4/25',q1:'Q1',q2:'Q2',q3:'Q3',q4:'Q4'};
+  const thead = cols.map(c=>{
+    const sc=sortCol===c?' sorted':'';
+    const ar=sortCol===c?(sortDir>0?' ↑':' ↓'):'';
+    return `<th class="${sc}" onclick="setSort('${c}')">${lbls[c]}${ar}</th>`;
+  }).join('');
+
+  const tbody = sorted.map(r=>`<tr>
+    <td class="unit">${r.name||'–'}</td>
+    <td>${occB(r.occ)}</td>
+    <td><span class="${ordCls(r.order)}">${r.order||'–'}</span></td>
+    ${qC(r.q0)}${qC(r.q1)}${qC(r.q2)}${qC(r.q3)}${qC(r.q4)}
+  </tr>`).join('');
+
+  document.getElementById('main').innerHTML = `<div class="tbl-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`;
+}
+
+function occB(v){
+  if(!v) return '<span class="badge bd">–</span>';
+  const l=v.toLowerCase();
+  if(l.includes('vacant')&&!l.includes('lot')) return `<span class="badge bv">Vacant</span>`;
+  if(l.includes('occupied')) return `<span class="badge bo">Occupied</span>`;
+  return `<span class="badge bd">${v}</span>`;
+}
+function ordCls(v){
+  if(!v) return 'ord';
+  const l=v.toLowerCase();
+  if(l.includes('finish')) return 'ord ord-f';
+  if(l.includes('stuck')) return 'ord ord-s';
+  if(l.includes('start')||l.includes('sched')) return 'ord ord-p';
+  return 'ord';
+}
+function qC(v){ return v!=null&&v!==0?'<td class="q on">&#10003;</td>':'<td class="q off">—</td>'; }
+
+function setSort(col){ if(sortCol===col) sortDir*=-1; else{sortCol=col;sortDir=1;} renderBoard(); }
+
+function exportCSV(){
+  const items=getFiltered();
+  const hdr=['Unit','OCC','Order','Q4/25','Q1','Q2','Q3','Q4'];
+  const rows=items.map(r=>[r.name,r.occ,r.order,r.q0,r.q1,r.q2,r.q3,r.q4].map(v=>v??'').join(','));
+  const b=curIdx!==null?BOARDS[curIdx].short:'turns';
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([hdr.join(','),...rows].join('\n'));
+  a.download=`turns-q-${b}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+
+
+function exportFullReport(){
+  const date = new Date().toISOString().slice(0,10);
+  const wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: Roll-up summary ──────────────────────────────────
+  const summaryRows = [
+    ['Quarterly Turns — Full Report', '', '', '', '', '', '', ''],
+    ['Generated:', date, '', '', '', '', '', ''],
+    [''],
+    ['Board', 'Q4/25 Finished', 'Q1 Finished', 'Q2 Finished', 'Q3 Finished', 'Q4 Finished', 'Vacant', 'Finished Total'],
+  ];
+  const tot = {q0:0,q1:0,q2:0,q3:0,q4:0,vacant:0,finished:0};
+  BOARDS.forEach(b => {
+    const s = rollupData[b.id];
+    if(!s||s.error){ summaryRows.push([b.name,'–','–','–','–','–','–','–']); return; }
+    tot.q0+=s.q0; tot.q1+=s.q1; tot.q2+=s.q2; tot.q3+=s.q3; tot.q4+=s.q4;
+    tot.vacant+=s.vacant; tot.finished+=s.finished;
+    summaryRows.push([b.name, s.q0||0, s.q1||0, s.q2||0, s.q3||0, s.q4||0, s.vacant||0, s.finished||0]);
+  });
+  summaryRows.push(['']);
+  summaryRows.push(['TOTAL ALL BOARDS', tot.q0||0, tot.q1||0, tot.q2||0, tot.q3||0, tot.q4||0, tot.vacant||0, tot.finished||0]);
+
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+  wsSummary['!cols'] = [{wch:28},{wch:15},{wch:13},{wch:13},{wch:13},{wch:13},{wch:10},{wch:15}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Roll-up Summary');
+
+  // ── One sheet per loaded board ────────────────────────────────
+  const fin = r => (r.order||'').toLowerCase().includes('finish');
+  const hasAnyQ = r => (r.q0!=null&&r.q0!==0)||(r.q1!=null&&r.q1!==0)||(r.q2!=null&&r.q2!==0)||(r.q3!=null&&r.q3!==0)||(r.q4!=null&&r.q4!==0);
+
+  BOARDS.forEach(b => {
+    const items = cache[b.id];
+    if(!items) return;
+    const rows = items.filter(r => hasAnyQ(r));
+    const sheetRows = [
+      [b.name + ' — Finished Units', '', '', '', '', '', '', ''],
+      ['Generated:', date, '', '', '', '', '', ''],
+      [''],
+      ['Unit', 'OCC', 'Order Status', 'Q4/25', 'Q1', 'Q2', 'Q3', 'Q4'],
+    ];
+    if(!rows.length){
+      sheetRows.push(['No finished units with Q values found']);
+    } else {
+      rows.forEach(r => sheetRows.push([
+        r.name||'', r.occ||'', r.order||'',
+        r.q0!=null&&r.q0!==0 ? '✓' : '',
+        r.q1!=null&&r.q1!==0 ? '✓' : '',
+        r.q2!=null&&r.q2!==0 ? '✓' : '',
+        r.q3!=null&&r.q3!==0 ? '✓' : '',
+        r.q4!=null&&r.q4!==0 ? '✓' : '',
+      ]));
+      // Totals row per board
+      sheetRows.push(['']);
+      const s = rollupData[b.id];
+      if(s && !s.error){
+        sheetRows.push(['BOARD TOTALS', '', '', s.q0||0, s.q1||0, s.q2||0, s.q3||0, s.q4||0]);
+      }
+    }
+    const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+    ws['!cols'] = [{wch:16},{wch:14},{wch:26},{wch:10},{wch:8},{wch:8},{wch:8},{wch:8}];
+    XLSX.utils.book_append_sheet(wb, ws, b.short);
+  });
+
+  XLSX.writeFile(wb, 'quarterly-turns-full-report-' + date + '.xlsx');
+}
+
+function exportExcel(){
+  const token = getToken();
+  const board = curIdx !== null ? BOARDS[curIdx] : null;
+  const boardName = board ? board.name : 'Export';
+  const date = new Date().toISOString().slice(0,10);
+
+  // ── Sheet 1: Roll-up summary ──────────────────────────────────
+  const summaryData = [
+    ['Quarterly Turns — Roll-up Summary', '', '', '', '', '', '', ''],
+    ['Generated:', date, '', '', '', '', '', ''],
+    [''],
+    ['Board', 'Q4/25 Finished', 'Q1 Finished', 'Q2 Finished', 'Q3 Finished', 'Q4 Finished', 'Vacant', 'Finished Total'],
+  ];
+  const totals = {q0:0,q1:0,q2:0,q3:0,q4:0,vacant:0,finished:0};
+  BOARDS.forEach(b => {
+    const s = rollupData[b.id];
+    if(!s||s.error){ summaryData.push([b.name,'–','–','–','–','–','–','–']); return; }
+    totals.q0+=s.q0; totals.q1+=s.q1; totals.q2+=s.q2; totals.q3+=s.q3; totals.q4+=s.q4;
+    totals.vacant+=s.vacant; totals.finished+=s.finished;
+    summaryData.push([b.name, s.q0||0, s.q1||0, s.q2||0, s.q3||0, s.q4||0, s.vacant||0, s.finished||0]);
+  });
+  summaryData.push(['TOTAL', totals.q0||0, totals.q1||0, totals.q2||0, totals.q3||0, totals.q4||0, totals.vacant||0, totals.finished||0]);
+
+  // ── Sheet 2: Current board detail ────────────────────────────
+  const detailData = [
+    [boardName + ' — Unit Detail', '', '', '', '', '', '', ''],
+    ['Generated:', date, '', '', '', '', '', ''],
+    ['Showing: Finished units with Q value assigned', '', '', '', '', '', '', ''],
+    [''],
+    ['Unit', 'OCC', 'Order Status', 'Q4/25', 'Q1', 'Q2', 'Q3', 'Q4'],
+  ];
+  const items = getFiltered();
+  items.forEach(r => {
+    detailData.push([
+      r.name||'',
+      r.occ||'',
+      r.order||'',
+      r.q0!=null&&r.q0!==0 ? '✓' : '',
+      r.q1!=null&&r.q1!==0 ? '✓' : '',
+      r.q2!=null&&r.q2!==0 ? '✓' : '',
+      r.q3!=null&&r.q3!==0 ? '✓' : '',
+      r.q4!=null&&r.q4!==0 ? '✓' : '',
+    ]);
+  });
+
+  // ── Build workbook ────────────────────────────────────────────
+  const wb = XLSX.utils.book_new();
+
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  wsSummary['!cols'] = [{wch:28},{wch:14},{wch:12},{wch:12},{wch:12},{wch:12},{wch:10},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Roll-up Summary');
+
+  const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
+  wsDetail['!cols'] = [{wch:16},{wch:14},{wch:26},{wch:10},{wch:8},{wch:8},{wch:8},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, wsDetail, board ? board.short + ' Detail' : 'Detail');
+
+  // ── Also add a sheet per loaded board ────────────────────────
+  BOARDS.forEach(b => {
+    const items = cache[b.id];
+    if(!items) return;
+    const fin = r => (r.order||'').toLowerCase().includes('finish');
+    const hasAnyQ = r => (r.q0!=null&&r.q0!==0)||(r.q1!=null&&r.q1!==0)||(r.q2!=null&&r.q2!==0)||(r.q3!=null&&r.q3!==0)||(r.q4!=null&&r.q4!==0);
+    const rows = items.filter(r=>hasAnyQ(r));
+    if(!rows.length) return;
+    const sheetData = [['Unit','OCC','Order Status','Q4/25','Q1','Q2','Q3','Q4']];
+    rows.forEach(r => sheetData.push([
+      r.name||'', r.occ||'', r.order||'',
+      r.q0!=null&&r.q0!==0?'✓':'',
+      r.q1!=null&&r.q1!==0?'✓':'',
+      r.q2!=null&&r.q2!==0?'✓':'',
+      r.q3!=null&&r.q3!==0?'✓':'',
+      r.q4!=null&&r.q4!==0?'✓':'',
+    ]));
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    ws['!cols'] = [{wch:16},{wch:14},{wch:26},{wch:10},{wch:8},{wch:8},{wch:8},{wch:8}];
+    XLSX.utils.book_append_sheet(wb, ws, b.short);
+  });
+
+  XLSX.writeFile(wb, 'quarterly-turns-' + date + '.xlsx');
+}
+
+['f-occ','f-q','f-s'].forEach(id=>
+  document.getElementById(id).addEventListener('input',()=>{ if(allItems.length) renderBoard(); })
+);
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</body>
+</html>
